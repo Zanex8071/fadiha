@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fadiha.run.place - Image Sharing</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Playfair Display & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: {
+              300: '#FDE047',
+              400: '#FACC15',
+              500: '#EAB308',
+              600: '#CA8A04',
+              accent: '#D4AF37',
+              dark: '#9A7B1C'
+            },
+            deepblue: {
+              800: '#0B192C',
+              900: '#030A16',
+              card: '#1E293B'
+            }
+          },
+          fontFamily: {
+            brand: ['Poppins', 'Playfair Display', 'serif'],
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Gold Gradient */
+    .bg-gold-gradient {
+      background: linear-gradient(135deg, #FFE259 0%, #FFA751 100%);
+      box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35);
+    }
+
+    /* Custom Blue Gradient Background */
+    body {
+      background: linear-gradient(180deg, #0f172a 0%, #030712 100%);
+      min-height: 100vh;
+      color: #f8fafc;
+    }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-input {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    
+    .glass-input:focus {
+      border-color: #FACC15;
+      outline: none;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="font-sans pb-16 antialiased selection:bg-yellow-400 selection:text-black">
+
+  <!-- TOP HEADER -->
+  <header class="bg-gold-gradient sticky top-0 z-40 text-black shadow-lg transition-all duration-300">
+    <div class="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        
+        <!-- Brand Title & Subtitle Container -->
+        <div class="w-full">
+          <div class="flex items-center justify-between">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold font-brand tracking-tight text-black drop-shadow-sm">
+              fadiha.run.place
+            </h1>
+            
+            <!-- Quick Username Badge / Switcher -->
+            <button onclick="openUsernameModal()" class="md:hidden flex items-center space-x-1.5 bg-black/10 hover:bg-black/20 text-black px-3 py-1.5 rounded-full text-xs font-semibold transition">
+              <i class="fa-solid fa-user-gear"></i>
+              <span id="headerUsernameMobile">Guest</span>
+            </button>
+          </div>
+          
+          <!-- Subtitle right-aligned underneath title -->
+          <div class="text-right w-full pt-1">
+            <span class="text-xs sm:text-sm md:text-base font-bold tracking-wide text-black/90 uppercase font-sans">
+              made by youssef mahboubi
+            </span>
+          </div>
+        </div>
+
+        <!-- Desktop Username Button -->
+        <div class="hidden md:flex items-center space-x-3 shrink-0">
+          <button onclick="openUsernameModal()" class="flex items-center space-x-2 bg-black/10 hover:bg-black/20 text-black px-4 py-2 rounded-full font-semibold text-sm transition border border-black/20">
+            <i class="fa-solid fa-circle-user text-lg"></i>
+            <span id="headerUsername">Guest</span>
+            <i class="fa-solid fa-pen text-xs opacity-60 ml-1"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+
+    <!-- UPLOAD SECTION -->
+    <section class="glass-card rounded-2xl p-5 sm:p-7 mb-10 shadow-2xl border border-blue-500/10">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+          <i class="fa-solid fa-cloud-arrow-up text-gold-400"></i>
+          Share a Photo
+        </h2>
+        <span class="text-xs text-gray-400">Posting as: <strong id="postingAsText" class="text-gold-400">Guest</strong></span>
+      </div>
+
+      <form id="uploadForm" class="space-y-4">
+        <!-- Drag & Drop Zone -->
+        <div 
+          id="dropZone" 
+          onclick="document.getElementById('imageInput').click()" 
+          class="border-2 border-dashed border-slate-600 hover:border-gold-400 rounded-xl p-6 sm:p-8 text-center cursor-pointer transition-all bg-slate-900/40 hover:bg-slate-900/80 group"
+        >
+          <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+          
+          <!-- Default State -->
+          <div id="dropZonePrompt" class="space-y-3">
+            <div class="w-14 h-14 bg-slate-800 text-gold-400 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-image text-2xl"></i>
+            </div>
+            <div>
+              <p class="text-sm sm:text-base font-medium text-gray-200">
+                Click to browse or drag & drop an image
+              </p>
+              <p class="text-xs text-gray-400 mt-1">PNG, JPG, GIF, WEBP up to 10MB</p>
+            </div>
+          </div>
+
+          <!-- Selected Preview State -->
+          <div id="previewContainer" class="hidden relative max-w-xs mx-auto">
+            <img id="imagePreview" src="" alt="Preview" class="rounded-lg max-h-56 mx-auto shadow-lg object-cover">
+            <button 
+              type="button" 
+              onclick="event.stopPropagation(); clearSelectedImage();" 
+              class="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Image Caption Input -->
+        <div>
+          <label for="imageCaption" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1">Caption / Title</label>
+          <input 
+            type="text" 
+            id="imageCaption" 
+            placeholder="Add a witty caption or title..." 
+            class="w-full glass-input text-white text-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-gold-400 placeholder-gray-500"
+          >
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          id="uploadBtn"
+          class="w-full bg-gold-400 hover:bg-gold-500 text-black font-bold py-3.5 px-6 rounded-xl transition shadow-lg shadow-gold-400/20 flex items-center justify-center space-x-2 text-base cursor-pointer"
+        >
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>Upload & Share Photo</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- GALLERY SECTION -->
+    <section>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-photo-film text-gold-400"></i>
+            Community Feed
+          </h2>
+          <p class="text-xs text-gray-400 mt-0.5">Explore photos shared by everyone</p>
+        </div>
+        
+        <!-- Filter / Counter -->
+        <div class="flex items-center space-x-2">
+          <span id="photoCount" class="bg-slate-800 text-gray-300 text-xs px-3 py-1.5 rounded-full font-medium border border-slate-700">
+            0 Photos
+          </span>
+        </div>
+      </div>
+
+      <!-- Feed Grid -->
+      <div id="galleryGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+        <!-- Dynamic Photo Cards will be injected here -->
+      </div>
+
+      <!-- Empty Feed State -->
+      <div id="emptyState" class="hidden text-center py-16 glass-card rounded-2xl border border-dashed border-slate-700">
+        <i class="fa-regular fa-images text-5xl text-gray-600 mb-3"></i>
+        <h3 class="text-lg font-semibold text-gray-300">No photos shared yet</h3>
+        <p class="text-sm text-gray-500 mt-1">Be the first person to upload a picture above!</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- USERNAME SELECTION MODAL -->
+  <div id="usernameModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="glass-card bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative transform scale-95 transition-transform duration-300" id="usernameModalBox">
+      
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-gold-400 text-black rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg font-bold text-2xl">
+          <i class="fa-solid fa-user-tag"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-white">Choose Your Username</h3>
+        <p class="text-xs text-gray-400 mt-1">Select a name to display on your uploads and comments on fadiha.run.place</p>
+      </div>
+
+      <form id="usernameForm" onsubmit="saveUsername(event)" class="space-y-4">
+        <div>
+          <label for="modalUsernameInput" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Username</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-500">
+              <i class="fa-solid fa-at"></i>
+            </span>
+            <input 
+              type="text" 
+              id="modalUsernameInput" 
+              required
+              maxlength="20"
+              placeholder="e.g. Alex99 or Youssef" 
+              class="w-full glass-input text-white text-base rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-gold-400 placeholder-gray-500"
+            >
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          class="w-full bg-gold-400 hover:bg-gold-500 text-black font-bold py-3.5 px-6 rounded-xl transition shadow-lg shadow-gold-400/20 text-base cursor-pointer"
+        >
+          Save & Continue
+        </button>
+      </form>
+      
+      <button 
+        id="closeModalBtn" 
+        onclick="closeUsernameModal()" 
+        class="hidden absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
+      >
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION TOAST -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-800 text-white px-5 py-3 rounded-xl shadow-2xl border border-gold-400/40 flex items-center space-x-3">
+      <i id="toastIcon" class="fa-solid fa-circle-check text-gold-400 text-lg"></i>
+      <span id="toastMessage" class="text-sm font-medium">Action completed!</span>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Global State
+    let currentUsername = "";
+    let posts = [];
+    let selectedImageBase64 = null;
+
+    // Default starter photos to keep the app vibrant initially
+    const SAMPLE_POSTS = [
+      {
+        id: "sample-1",
+        uploader: "Youssef Mahboubi",
+        caption: "Welcome to fadiha.run.place! Upload your images now.",
+        imageUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80",
+        timestamp: Date.now() - 3600000 * 2,
+        comments: [
+          {
+            id: "c-1",
+            username: "Admin",
+            text: "Hope you enjoy the platform! Feel free to share and comment.",
+            timestamp: Date.now() - 3600000
+          }
+        ]
+      },
+      {
+        id: "sample-2",
+        uploader: "Fadiha Fan",
+        caption: "Neon city vibes 🌃",
+        imageUrl: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1000&q=80",
+        timestamp: Date.now() - 3600000 * 5,
+        comments: []
+      }
+    ];
+
+    // INITIALIZATION
+    window.onload = function() {
+      // 1. Load Username
+      const savedUser = localStorage.getItem('fadiha_username');
+      if (savedUser && savedUser.trim() !== "") {
+        currentUsername = savedUser.trim();
+        updateUsernameUI();
+      } else {
+        openUsernameModal(false); // Force modal open
+      }
+
+      // 2. Load Posts from LocalStorage or seed with samples
+      loadPosts();
+
+      // 3. Setup Drag and Drop event listeners
+      setupDragAndDrop();
+    };
+
+    // USERNAME MODAL MANAGEMENT
+    function openUsernameModal(allowClose = true) {
+      const modal = document.getElementById('usernameModal');
+      const modalBox = document.getElementById('usernameModalBox');
+      const closeBtn = document.getElementById('closeModalBtn');
+      const input = document.getElementById('modalUsernameInput');
+
+      input.value = currentUsername;
+
+      if (allowClose && currentUsername !== "") {
+        closeBtn.classList.remove('hidden');
+      } else {
+        closeBtn.classList.add('hidden');
+      }
+
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      modalBox.classList.remove('scale-95');
+      modalBox.classList.add('scale-100');
+      
+      setTimeout(() => input.focus(), 100);
+    }
+
+    function closeUsernameModal() {
+      if (!currentUsername || currentUsername.trim() === "") return;
+      
+      const modal = document.getElementById('usernameModal');
+      const modalBox = document.getElementById('usernameModalBox');
+
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      modalBox.classList.remove('scale-100');
+      modalBox.classList.add('scale-95');
+    }
+
+    function saveUsername(e) {
+      e.preventDefault();
+      const input = document.getElementById('modalUsernameInput');
+      const val = input.value.trim();
+
+      if (val) {
+        currentUsername = val;
+        localStorage.setItem('fadiha_username', currentUsername);
+        updateUsernameUI();
+        closeUsernameModal();
+        showToast(`Welcome, ${currentUsername}!`);
+      }
+    }
+
+    function updateUsernameUI() {
+      document.getElementById('headerUsername').textContent = currentUsername;
+      document.getElementById('headerUsernameMobile').textContent = currentUsername;
+      document.getElementById('postingAsText').textContent = currentUsername;
+    }
+
+    // DRAG & DROP & FILE HANDLING
+    function setupDragAndDrop() {
+      const dropZone = document.getElementById('dropZone');
+
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+      });
+
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.classList.add('border-gold-400', 'bg-slate-900/90');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.classList.remove('border-gold-400', 'bg-slate-900/90');
+        }, false);
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files[0]) {
+          processFile(files[0]);
+        }
+      }, false);
+    }
+
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (files && files[0]) {
+        processFile(files[0]);
+      }
+    }
+
+    function processFile(file) {
+      if (!file.type.startsWith('image/')) {
+        showToast('Please select a valid image file', 'error');
+        return;
+      }
+
+      // Limit to ~10MB
+      if (file.size > 10 * 1024 * 1024) {
+        showToast('Image size exceeds 10MB limit', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        selectedImageBase64 = e.target.result;
+        document.getElementById('imagePreview').src = selectedImageBase64;
+        document.getElementById('dropZonePrompt').classList.add('hidden');
+        document.getElementById('previewContainer').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearSelectedImage() {
+      selectedImageBase64 = null;
+      document.getElementById('imageInput').value = '';
+      document.getElementById('imagePreview').src = '';
+      document.getElementById('previewContainer').classList.add('hidden');
+      document.getElementById('dropZonePrompt').classList.remove('hidden');
+    }
+
+    // POST CREATION & STORAGE
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      if (!currentUsername) {
+        openUsernameModal(false);
+        return;
+      }
+
+      if (!selectedImageBase64) {
+        showToast('Please select or drag an image first!', 'error');
+        return;
+      }
+
+      const captionInput = document.getElementById('imageCaption');
+      const caption = captionInput.value.trim() || 'Untitled Photo';
+
+      const newPost = {
+        id: 'post-' + Date.now(),
+        uploader: currentUsername,
+        caption: caption,
+        imageUrl: selectedImageBase64,
+        timestamp: Date.now(),
+        comments: []
+      };
+
+      posts.unshift(newPost);
+      savePosts();
+      renderGallery();
+
+      // Reset form
+      clearSelectedImage();
+      captionInput.value = '';
+
+      showToast('Photo uploaded successfully!');
+    });
+
+    function savePosts() {
+      try {
+        localStorage.setItem('fadiha_posts', JSON.stringify(posts));
+      } catch (err) {
+        console.error('Storage limit reached', err);
+        showToast('Local storage full! Older images might not save.', 'error');
+      }
+    }
+
+    function loadPosts() {
+      const stored = localStorage.getItem('fadiha_posts');
+      if (stored) {
+        try {
+          posts = JSON.parse(stored);
+        } catch(e) {
+          posts = [...SAMPLE_POSTS];
+        }
+      } else {
+        posts = [...SAMPLE_POSTS];
+        savePosts();
+      }
+      renderGallery();
+    }
+
+    // RENDER GALLERY
+    function renderGallery() {
+      const grid = document.getElementById('galleryGrid');
+      const emptyState = document.getElementById('emptyState');
+      const photoCount = document.getElementById('photoCount');
+
+      photoCount.textContent = `${posts.length} ${posts.length === 1 ? 'Photo' : 'Photos'}`;
+
+      if (posts.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+
+      grid.innerHTML = posts.map(post => {
+        const formattedTime = formatTimeAgo(post.timestamp);
+        
+        const commentsHTML = (post.comments || []).map(comment => `
+          <div class="bg-slate-900/60 rounded-xl p-3 text-xs space-y-1 border border-slate-800">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-gold-400">${escapeHTML(comment.username)}</span>
+              <span class="text-[10px] text-gray-500">${formatTimeAgo(comment.timestamp)}</span>
+            </div>
+            <p class="text-gray-200 leading-relaxed">${escapeHTML(comment.text)}</p>
+          </div>
+        `).join('');
+
+        return `
+          <div class="glass-card rounded-2xl overflow-hidden shadow-xl border border-slate-800 flex flex-col justify-between">
+            <!-- Header of Card -->
+            <div>
+              <div class="p-4 flex items-center justify-between border-b border-slate-800/80">
+                <div class="flex items-center space-x-3">
+                  <div class="w-9 h-9 bg-gold-400 text-black font-extrabold rounded-full flex items-center justify-center text-sm shadow">
+                    ${post.uploader.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-bold text-white leading-tight">${escapeHTML(post.uploader)}</h4>
+                    <p class="text-[11px] text-gray-400">${formattedTime}</p>
+                  </div>
+                </div>
+                
+                <!-- Download Button -->
+                <button 
+                  onclick="downloadImage('${post.imageUrl}', '${escapeHTML(post.caption)}')"
+                  title="Download High-Res Image"
+                  class="bg-slate-800 hover:bg-gold-400 hover:text-black text-gray-300 p-2 rounded-xl text-xs transition flex items-center gap-1.5 border border-slate-700"
+                >
+                  <i class="fa-solid fa-download"></i>
+                  <span class="hidden sm:inline font-semibold">Download</span>
+                </button>
+              </div>
+
+              <!-- Image Display -->
+              <div class="relative bg-slate-950 flex items-center justify-center min-h-[220px] max-h-[450px] overflow-hidden group">
+                <img 
+                  src="${post.imageUrl}" 
+                  alt="${escapeHTML(post.caption)}" 
+                  class="w-full h-full object-cover max-h-[450px] transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                >
+              </div>
+
+              <!-- Caption -->
+              <div class="p-4 border-b border-slate-800/60">
+                <p class="text-sm font-medium text-gray-100">${escapeHTML(post.caption)}</p>
+              </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="p-4 bg-slate-950/40 space-y-3">
+              <div class="flex items-center justify-between text-xs text-gray-400 mb-1">
+                <span class="font-semibold flex items-center gap-1">
+                  <i class="fa-regular fa-comments text-gold-400"></i>
+                  Comments (${(post.comments || []).length})
+                </span>
+              </div>
+
+              <!-- Comment List -->
+              <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                ${commentsHTML || '<p class="text-xs text-gray-500 italic py-1">No comments yet. Start the conversation!</p>'}
+              </div>
+
+              <!-- Comment Input Form -->
+              <form onsubmit="addComment(event, '${post.id}')" class="flex gap-2 pt-2">
+                <input 
+                  type="text" 
+                  placeholder="Add a comment..." 
+                  required
+                  class="flex-1 glass-input text-white text-xs rounded-xl px-3 py-2.5 focus:ring-1 focus:ring-gold-400 placeholder-gray-500"
+                >
+                <button 
+                  type="submit" 
+                  class="bg-gold-400 hover:bg-gold-500 text-black px-3.5 py-2.5 rounded-xl font-bold text-xs transition shadow shrink-0 flex items-center justify-center"
+                >
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // COMMENT FUNCTION
+    function addComment(e, postId) {
+      e.preventDefault();
+
+      if (!currentUsername) {
+        openUsernameModal(false);
+        return;
+      }
+
+      const input = e.target.querySelector('input');
+      const text = input.value.trim();
+
+      if (!text) return;
+
+      const postIndex = posts.findIndex(p => p.id === postId);
+      if (postIndex !== -1) {
+        if (!posts[postIndex].comments) posts[postIndex].comments = [];
+
+        posts[postIndex].comments.push({
+          id: 'c-' + Date.now(),
+          username: currentUsername,
+          text: text,
+          timestamp: Date.now()
+        });
+
+        savePosts();
+        renderGallery();
+        showToast('Comment added!');
+      }
+    }
+
+    // DOWNLOAD IMAGE FUNCTION
+    function downloadImage(url, title) {
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Clean title for file name
+      const safeTitle = (title || 'fadiha-image')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .substring(0, 30);
+
+      link.download = `${safeTitle}-${Date.now()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast('Downloading photo...');
+    }
+
+    // UTILITIES
+    function formatTimeAgo(timestamp) {
+      const seconds = Math.floor((Date.now() - timestamp) / 1000);
+      if (seconds < 60) return 'Just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      return `${days}d ago`;
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMessage.textContent = message;
+
+      if (type === 'error') {
+        toastIcon.className = 'fa-solid fa-circle-exclamation text-red-400 text-lg';
+      } else {
+        toastIcon.className = 'fa-solid fa-circle-check text-gold-400 text-lg';
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
