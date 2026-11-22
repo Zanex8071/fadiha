@@ -691,7 +691,7 @@
     }
 
     // COMMENT FUNCTION
-    function addComment(e, postId) {
+    async function addComment(e, postId) {
       e.preventDefault();
 
       if (!currentUsername) {
@@ -715,7 +715,7 @@
           timestamp: Date.now()
         });
 
-        savePosts();
+        await updateCommentsInCloud(postId, posts[postIndex].comments);
         renderGallery();
         showToast('Comment added!');
       }
