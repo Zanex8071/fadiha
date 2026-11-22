@@ -16,6 +16,9 @@
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+
   <script>
     tailwind.config = {
       theme: {
@@ -300,6 +303,73 @@
     let currentUsername = "";
     let posts = [];
     let selectedImageBase64 = null;
+    let selectedImageFile = null;
+
+    const SUPABASE_URL = "https://cswyyoghysrohrjeipvm.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_i5alzt9YywK-yd3Fg4sVKQ_LJwD2A0G";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function loadPostsFromCloud() {
+      const { data, error } = await supabaseClient
+        .from("posts")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading posts:", error);
+        return;
+      }
+
+      posts = (data || []).map((row) => ({
+        id: row.id,
+        uploader: row.uploader,
+        caption: row.caption,
+        imageUrl: row.image_url,
+        timestamp: row.created_at,
+        comments: row.comments || []
+      }));
+
+      renderGallery();
+    }
+
+    async function uploadPhotoFile(file) {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filePath = `${Date.now()}-${safeName}`;
+
+      const { error: uploadError } = await supabaseClient.storage
+        .from("photos")
+        .upload(filePath, file, { cacheControl: "3600", upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabaseClient.storage
+        .from("photos")
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    }
+
+    async function createPostInCloud(postObj) {
+      const { error } = await supabaseClient.from("posts").insert({
+        id: postObj.id,
+        uploader: postObj.uploader,
+        caption: postObj.caption,
+        image_url: postObj.imageUrl,
+        created_at: postObj.timestamp,
+        comments: postObj.comments || []
+      });
+
+      if (error) throw error;
+    }
+
+    async function updateCommentsInCloud(postId, commentsArray) {
+      const { error } = await supabaseClient
+        .from("posts")
+        .update({ comments: commentsArray })
+        .eq("id", postId);
+
+      if (error) throw error;
+    }
 
     // Default starter photos to keep the app vibrant initially
     const SAMPLE_POSTS = [];
@@ -316,7 +386,7 @@
       }
 
       // 2. Load Posts from LocalStorage or seed with samples
-      loadPosts();
+      loadPostsFromCloud();
 
       // 3. Setup Drag and Drop event listeners
       setupDragAndDrop();
@@ -428,6 +498,9 @@
         return;
       }
 
+      selectedImageFile = file;
+    
+
       const reader = new FileReader();
       reader.onload = function(e) {
         selectedImageBase64 = e.target.result;
@@ -440,6 +513,7 @@
 
     function clearSelectedImage() {
       selectedImageBase64 = null;
+      selectedImageFile = null;
       document.getElementById('imageInput').value = '';
       document.getElementById('imagePreview').src = '';
       document.getElementById('previewContainer').classList.add('hidden');
@@ -447,7 +521,7 @@
     }
 
     // POST CREATION & STORAGE
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
       e.preventDefault();
 
       if (!currentUsername) {
@@ -455,10 +529,12 @@
         return;
       }
 
-      if (!selectedImageBase64) {
+      if (!selectedImageFile) {
         showToast('Please select or drag an image first!', 'error');
         return;
       }
+      const publicUrl = await uploadPhotoFile(selectedImageFile);
+      
 
       const captionInput = document.getElementById('imageCaption');
       const caption = captionInput.value.trim() || 'Untitled Photo';
@@ -467,13 +543,14 @@
         id: 'post-' + Date.now(),
         uploader: currentUsername,
         caption: caption,
-        imageUrl: selectedImageBase64,
+        imageUrl: publicUrl,
         timestamp: Date.now(),
         comments: []
       };
 
       posts.unshift(newPost);
-      savePosts();
+      await createPostInCloud(newPost);
+    
       renderGallery();
 
       // Reset form
