@@ -554,346 +554,6 @@
       }
     });
 
-<p class="text-xs text-gray-400 mt-1">Select a name to display on your uploads and comments on fadiha.run.place</p>
-      </div>
-
-      <form id="usernameForm" onsubmit="saveUsername(event)" class="space-y-4">
-        <div>
-          <label for="modalUsernameInput" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Username</label>
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-500">
-              <i class="fa-solid fa-at"></i>
-            </span>
-            <input 
-              type="text" 
-              id="modalUsernameInput" 
-              required
-              maxlength="20"
-              placeholder="e.g. Alex99 or Youssef" 
-              class="w-full glass-input text-white text-base rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-gold-400 placeholder-gray-500"
-            >
-          </div>
-        </div>
-
-        <button 
-          type="submit" 
-          class="w-full bg-gold-400 hover:bg-gold-500 text-black font-bold py-3.5 px-6 rounded-xl transition shadow-lg shadow-gold-400/20 text-base cursor-pointer"
-        >
-          Save & Continue
-        </button>
-      </form>
-      
-      <button 
-        id="closeModalBtn" 
-        onclick="closeUsernameModal()" 
-        class="hidden absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
-      >
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-  </div>
-
-  <!-- NOTIFICATION TOAST -->
-  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
-    <div class="bg-slate-800 text-white px-5 py-3 rounded-xl shadow-2xl border border-gold-400/40 flex items-center space-x-3">
-      <i id="toastIcon" class="fa-solid fa-circle-check text-gold-400 text-lg"></i>
-      <span id="toastMessage" class="text-sm font-medium">Action completed!</span>
-    </div>
-  </div>
-
-  <!-- JAVASCRIPT LOGIC -->
-  <script>
-    // Global State
-    let currentUsername = "";
-    let posts = [];
-    let selectedImageBase64 = null;
-    let selectedImageFile = null;
-
-    const SUPABASE_URL = "https://cswyyoghysrohrjeipvm.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_i5alzt9YywK-yd3Fg4sVKQ_LJwD2A0G";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    async function loadPostsFromCloud() {
-      const { data, error } = await supabaseClient
-        .from("posts")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error loading posts:", error);
-        return;
-      }
-
-      posts = (data || []).map((row) => ({
-        id: row.id,
-        uploader: row.uploader,
-        caption: row.caption,
-        imageUrl: row.image_url,
-        timestamp: row.created_at,
-        comments: row.comments || []
-      }));
-
-      renderGallery();
-    }
-
-    async function uploadPhotoFile(file) {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const filePath = `${Date.now()}-${safeName}`;
-
-      const { error: uploadError } = await supabaseClient.storage
-        .from("photos")
-        .upload(filePath, file, { cacheControl: "3600", upsert: false });
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabaseClient.storage
-        .from("photos")
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
-    }
-
-    async function createPostInCloud(postObj) {
-      const { error } = await supabaseClient.from("posts").insert({
-        id: postObj.id,
-        uploader: postObj.uploader,
-        caption: postObj.caption,
-        image_url: postObj.imageUrl,
-        created_at: postObj.timestamp,
-        comments: postObj.comments || []
-      });
-
-      if (error) throw error;
-    }
-
-    async function updateCommentsInCloud(postId, commentsArray) {
-      const { error } = await supabaseClient
-        .from("posts")
-        .update({ comments: commentsArray })
-        .eq("id", postId);
-
-      if (error) throw error;
-    }
-
-    // Default starter photos to keep the app vibrant initially
-    const SAMPLE_POSTS = [];
-
-    // INITIALIZATION
-    window.onload = function() {
-      // 1. Load Username
-      const savedUser = localStorage.getItem('fadiha_username');
-      if (savedUser && savedUser.trim() !== "") {
-        currentUsername = savedUser.trim();
-        updateUsernameUI();
-      } else {
-        openUsernameModal(false); // Force modal open
-      }
-
-      // 2. Load Posts from LocalStorage or seed with samples
-      loadPostsFromCloud();
-
-      // 3. Setup Drag and Drop event listeners
-      setupDragAndDrop();
-    };
-
-    // USERNAME MODAL MANAGEMENT
-    function openUsernameModal(allowClose = true) {
-      const modal = document.getElementById('usernameModal');
-      const modalBox = document.getElementById('usernameModalBox');
-      const closeBtn = document.getElementById('closeModalBtn');
-      const input = document.getElementById('modalUsernameInput');
-
-      input.value = currentUsername;
-
-      if (allowClose && currentUsername !== "") {
-        closeBtn.classList.remove('hidden');
-      } else {
-        closeBtn.classList.add('hidden');
-      }
-
-      modal.classList.remove('opacity-0', 'pointer-events-none');
-      modalBox.classList.remove('scale-95');
-      modalBox.classList.add('scale-100');
-      
-      setTimeout(() => input.focus(), 100);
-    }
-
-    function closeUsernameModal() {
-      if (!currentUsername || currentUsername.trim() === "") return;
-      
-      const modal = document.getElementById('usernameModal');
-      const modalBox = document.getElementById('usernameModalBox');
-
-      modal.classList.add('opacity-0', 'pointer-events-none');
-      modalBox.classList.remove('scale-100');
-      modalBox.classList.add('scale-95');
-    }
-
-    function saveUsername(e) {
-      e.preventDefault();
-      const input = document.getElementById('modalUsernameInput');
-      const val = input.value.trim();
-
-      if (val) {
-        currentUsername = val;
-        localStorage.setItem('fadiha_username', currentUsername);
-        updateUsernameUI();
-        closeUsernameModal();
-        showToast(`Welcome, ${currentUsername}!`);
-      }
-    }
-
-    function updateUsernameUI() {
-      document.getElementById('headerUsername').textContent = currentUsername;
-      document.getElementById('headerUsernameMobile').textContent = currentUsername;
-      document.getElementById('postingAsText').textContent = currentUsername;
-    }
-
-    // DRAG & DROP & FILE HANDLING
-    function setupDragAndDrop() {
-      const dropZone = document.getElementById('dropZone');
-
-      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
-      });
-
-      function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-
-      ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-          dropZone.classList.add('border-gold-400', 'bg-slate-900/90');
-        }, false);
-      });
-
-      ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-          dropZone.classList.remove('border-gold-400', 'bg-slate-900/90');
-        }, false);
-      });
-
-      dropZone.addEventListener('drop', (e) => {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        if (files && files[0]) {
-          processFile(files[0]);
-        }
-      }, false);
-    }
-
-    function handleFileSelect(e) {
-      const files = e.target.files;
-      if (files && files[0]) {
-        processFile(files[0]);
-      }
-    }
-
-    function processFile(file) {
-      if (!file.type.startsWith('image/')) {
-        showToast('Please select a valid image file', 'error');
-        return;
-      }
-
-      // Limit to ~10MB
-      if (file.size > 10 * 1024 * 1024) {
-        showToast('Image size exceeds 10MB limit', 'error');
-        return;
-      }
-
-      selectedImageFile = file;
-    
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        selectedImageBase64 = e.target.result;
-        document.getElementById('imagePreview').src = selectedImageBase64;
-        document.getElementById('dropZonePrompt').classList.add('hidden');
-        document.getElementById('previewContainer').classList.remove('hidden');
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function clearSelectedImage() {
-      selectedImageBase64 = null;
-      selectedImageFile = null;
-      document.getElementById('imageInput').value = '';
-      document.getElementById('imagePreview').src = '';
-      document.getElementById('previewContainer').classList.add('hidden');
-      document.getElementById('dropZonePrompt').classList.remove('hidden');
-    }
-
-    // POST CREATION & STORAGE
-    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-
-      if (!currentUsername) {
-        openUsernameModal(false);
-        return;
-      }
-
-      if (!selectedImageFile) {
-        showToast('Please select or drag an image first!', 'error');
-        return;
-      }
-      try {
-      const publicUrl = await uploadPhotoFile(selectedImageFile);
-      
-
-      const captionInput = document.getElementById('imageCaption');
-      const caption = captionInput.value.trim() || 'Untitled Photo';
-
-      const newPost = {
-        id: 'post-' + Date.now(),
-        uploader: currentUsername,
-        caption: caption,
-        imageUrl: publicUrl,
-        timestamp: Date.now(),
-        comments: []
-      };
-
-      posts.unshift(newPost);
-      await createPostInCloud(newPost);
-    
-      renderGallery();
-
-      // Reset form
-      clearSelectedImage();
-      captionInput.value = '';
-
-      showToast('Photo uploaded successfully!');
-      } catch (err) {
-        console.error(err);
-        showToast('Error: ' + (err.message || err), 'error');
-      }
-                                                   
-    });
-
-    function savePosts() {
-      try {
-        localStorage.setItem('fadiha_posts', JSON.stringify(posts));
-      } catch (err) {
-        console.error('Storage limit reached', err);
-        showToast('Local storage full! Older images might not save.', 'error');
-      }
-    }
-
-    function loadPosts() {
-      const stored = localStorage.getItem('fadiha_posts');
-      if (stored) {
-        try {
-          posts = JSON.parse(stored);
-        } catch(e) {
-          posts = [...SAMPLE_POSTS];
-        }
-      } else {
-        posts = [...SAMPLE_POSTS];
-        savePosts();
-      }
-      renderGallery();
-    }
-
     // RENDER GALLERY
     function renderGallery() {
       const grid = document.getElementById('galleryGrid');
@@ -912,7 +572,7 @@
 
       grid.innerHTML = posts.map(post => {
         const formattedTime = formatTimeAgo(post.timestamp);
-        
+
         const commentsHTML = (post.comments || []).map(comment => `
           <div class="bg-slate-900/60 rounded-xl p-3 text-xs space-y-1 border border-slate-800">
             <div class="flex items-center justify-between">
@@ -937,9 +597,9 @@
                     <p class="text-[11px] text-gray-400">${formattedTime}</p>
                   </div>
                 </div>
-                
+
                 <!-- Download Button -->
-                <button 
+                <button
                   onclick="downloadImage('${post.imageUrl}', '${escapeHTML(post.caption)}')"
                   title="Download High-Res Image"
                   class="bg-slate-800 hover:bg-gold-400 hover:text-black text-gray-300 p-2 rounded-xl text-xs transition flex items-center gap-1.5 border border-slate-700"
@@ -951,9 +611,9 @@
 
               <!-- Image Display -->
               <div class="relative bg-slate-950 flex items-center justify-center min-h-[220px] max-h-[450px] overflow-hidden group">
-                <img 
-                  src="${post.imageUrl}" 
-                  alt="${escapeHTML(post.caption)}" 
+                <img
+                  src="${post.imageUrl}"
+                  alt="${escapeHTML(post.caption)}"
                   class="w-full h-full object-cover max-h-[450px] transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 >
@@ -981,14 +641,14 @@
 
               <!-- Comment Input Form -->
               <form onsubmit="addComment(event, '${post.id}')" class="flex gap-2 pt-2">
-                <input 
-                  type="text" 
-                  placeholder="Add a comment..." 
+                <input
+                  type="text"
+                  placeholder="Add a comment..."
                   required
                   class="flex-1 glass-input text-white text-xs rounded-xl px-3 py-2.5 focus:ring-1 focus:ring-gold-400 placeholder-gray-500"
                 >
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   class="bg-gold-400 hover:bg-gold-500 text-black px-3.5 py-2.5 rounded-xl font-bold text-xs transition shadow shrink-0 flex items-center justify-center"
                 >
                   <i class="fa-solid fa-paper-plane"></i>
@@ -1016,18 +676,21 @@
 
       const postIndex = posts.findIndex(p => p.id === postId);
       if (postIndex !== -1) {
-        if (!posts[postIndex].comments) posts[postIndex].comments = [];
-
-        posts[postIndex].comments.push({
+        const updatedComments = [...(posts[postIndex].comments || []), {
           id: 'c-' + Date.now(),
           username: currentUsername,
           text: text,
           timestamp: Date.now()
-        });
+        }];
 
-        await updateCommentsInCloud(postId, posts[postIndex].comments);
-        renderGallery();
-        showToast('Comment added!');
+        try {
+          await updateCommentsInCloud(postId, updatedComments);
+          input.value = '';
+          showToast('Comment added!');
+        } catch (err) {
+          console.error(err);
+          showToast('Error adding comment: ' + (err.message || err), 'error');
+        }
       }
     }
 
@@ -1035,7 +698,7 @@
     function downloadImage(url, title) {
       const link = document.createElement('a');
       link.href = url;
-      
+
       // Clean title for file name
       const safeTitle = (title || 'fadiha-image')
         .toLowerCase()
@@ -1044,6 +707,8 @@
         .substring(0, 30);
 
       link.download = `${safeTitle}-${Date.now()}.jpg`;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1065,7 +730,7 @@
 
     function escapeHTML(str) {
       if (!str) return '';
-      return str.replace(/[&<>'"]/g, 
+      return String(str).replace(/[&<>'"]/g,
         tag => ({
           '&': '&amp;',
           '<': '&lt;',
