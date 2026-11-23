@@ -533,6 +533,7 @@
         showToast('Please select or drag an image first!', 'error');
         return;
       }
+      try {
       const publicUrl = await uploadPhotoFile(selectedImageFile);
       
 
@@ -558,6 +559,11 @@
       captionInput.value = '';
 
       showToast('Photo uploaded successfully!');
+      } catch (err) {
+        console.error(err);
+        showToast('Error: ' + (err.message || err), 'error');
+      }
+                                                   
     });
 
     function savePosts() {
