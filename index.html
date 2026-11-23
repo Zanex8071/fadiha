@@ -522,7 +522,10 @@
       }
 
       const uploadBtn = document.getElementById('uploadBtn');
+      const originalBtnHTML = uploadBtn.innerHTML;
       uploadBtn.disabled = true;
+      uploadBtn.classList.add('opacity-70', 'cursor-not-allowed');
+      uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Uploading...</span>';
 
       try {
         const publicUrl = await uploadPhotoFile(selectedImageFile);
@@ -551,6 +554,8 @@
         showToast('Error: ' + (err.message || err), 'error');
       } finally {
         uploadBtn.disabled = false;
+        uploadBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+        uploadBtn.innerHTML = originalBtnHTML;
       }
     });
 
