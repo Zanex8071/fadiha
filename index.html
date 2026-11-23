@@ -16,8 +16,9 @@
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
+  <!-- Firebase Compat SDK (Realtime Database) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 
   <script>
     tailwind.config = {
@@ -72,7 +73,7 @@
       background: rgba(15, 23, 42, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
-    
+
     .glass-input:focus {
       border-color: #FACC15;
       outline: none;
@@ -100,21 +101,21 @@
   <header class="bg-gold-gradient sticky top-0 z-40 text-black shadow-lg transition-all duration-300">
     <div class="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-        
+
         <!-- Brand Title & Subtitle Container -->
         <div class="w-full">
           <div class="flex items-center justify-between">
             <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold font-brand tracking-tight text-black drop-shadow-sm">
               fadiha.run.place
             </h1>
-            
+
             <!-- Quick Username Badge / Switcher -->
             <button onclick="openUsernameModal()" class="md:hidden flex items-center space-x-1.5 bg-black/10 hover:bg-black/20 text-black px-3 py-1.5 rounded-full text-xs font-semibold transition">
               <i class="fa-solid fa-user-gear"></i>
               <span id="headerUsernameMobile">Guest</span>
             </button>
           </div>
-          
+
           <!-- Subtitle right-aligned underneath title -->
           <div class="text-right w-full pt-1">
             <span class="text-xs sm:text-sm md:text-base font-bold tracking-wide text-black/90 uppercase font-sans">
@@ -151,13 +152,13 @@
 
       <form id="uploadForm" class="space-y-4">
         <!-- Drag & Drop Zone -->
-        <div 
-          id="dropZone" 
-          onclick="document.getElementById('imageInput').click()" 
+        <div
+          id="dropZone"
+          onclick="document.getElementById('imageInput').click()"
           class="border-2 border-dashed border-slate-600 hover:border-gold-400 rounded-xl p-6 sm:p-8 text-center cursor-pointer transition-all bg-slate-900/40 hover:bg-slate-900/80 group"
         >
           <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
-          
+
           <!-- Default State -->
           <div id="dropZonePrompt" class="space-y-3">
             <div class="w-14 h-14 bg-slate-800 text-gold-400 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
@@ -174,9 +175,9 @@
           <!-- Selected Preview State -->
           <div id="previewContainer" class="hidden relative max-w-xs mx-auto">
             <img id="imagePreview" src="" alt="Preview" class="rounded-lg max-h-56 mx-auto shadow-lg object-cover">
-            <button 
-              type="button" 
-              onclick="event.stopPropagation(); clearSelectedImage();" 
+            <button
+              type="button"
+              onclick="event.stopPropagation(); clearSelectedImage();"
               class="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition"
             >
               <i class="fa-solid fa-xmark"></i>
@@ -187,17 +188,17 @@
         <!-- Image Caption Input -->
         <div>
           <label for="imageCaption" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1">Caption / Title</label>
-          <input 
-            type="text" 
-            id="imageCaption" 
-            placeholder="Add a witty caption or title..." 
+          <input
+            type="text"
+            id="imageCaption"
+            placeholder="Add a witty caption or title..."
             class="w-full glass-input text-white text-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-gold-400 placeholder-gray-500"
           >
         </div>
 
         <!-- Submit Button -->
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           id="uploadBtn"
           class="w-full bg-gold-400 hover:bg-gold-500 text-black font-bold py-3.5 px-6 rounded-xl transition shadow-lg shadow-gold-400/20 flex items-center justify-center space-x-2 text-base cursor-pointer"
         >
@@ -217,7 +218,7 @@
           </h2>
           <p class="text-xs text-gray-400 mt-0.5">Explore photos shared by everyone</p>
         </div>
-        
+
         <!-- Filter / Counter -->
         <div class="flex items-center space-x-2">
           <span id="photoCount" class="bg-slate-800 text-gray-300 text-xs px-3 py-1.5 rounded-full font-medium border border-slate-700">
@@ -244,13 +245,316 @@
   <!-- USERNAME SELECTION MODAL -->
   <div id="usernameModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
     <div class="glass-card bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative transform scale-95 transition-transform duration-300" id="usernameModalBox">
-      
+
       <div class="text-center mb-6">
         <div class="w-16 h-16 bg-gold-400 text-black rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg font-bold text-2xl">
           <i class="fa-solid fa-user-tag"></i>
         </div>
         <h3 class="text-2xl font-bold text-white">Choose Your Username</h3>
         <p class="text-xs text-gray-400 mt-1">Select a name to display on your uploads and comments on fadiha.run.place</p>
+      </div>
+
+      <form id="usernameForm" onsubmit="saveUsername(event)" class="space-y-4">
+        <div>
+          <label for="modalUsernameInput" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Username</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-500">
+              <i class="fa-solid fa-at"></i>
+            </span>
+            <input
+              type="text"
+              id="modalUsernameInput"
+              required
+              maxlength="20"
+              placeholder="e.g. Alex99 or Youssef"
+              class="w-full glass-input text-white text-base rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-gold-400 placeholder-gray-500"
+            >
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-gold-400 hover:bg-gold-500 text-black font-bold py-3.5 px-6 rounded-xl transition shadow-lg shadow-gold-400/20 text-base cursor-pointer"
+        >
+          Save & Continue
+        </button>
+      </form>
+
+      <button
+        id="closeModalBtn"
+        onclick="closeUsernameModal()"
+        class="hidden absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
+      >
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION TOAST -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-800 text-white px-5 py-3 rounded-xl shadow-2xl border border-gold-400/40 flex items-center space-x-3">
+      <i id="toastIcon" class="fa-solid fa-circle-check text-gold-400 text-lg"></i>
+      <span id="toastMessage" class="text-sm font-medium">Action completed!</span>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Global State
+    let currentUsername = "";
+    let posts = [];
+    let selectedImageBase64 = null;
+    let selectedImageFile = null;
+
+    // ImgBB & Firebase Realtime Database Configuration
+    const IMGBB_API_KEY = "ed1d5d8b2ef177b8751ea0f068ac78de";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC87mH45G6hDiBlq7oE-cMhtTiMwsM2aSw",
+      authDomain: "fadiha.firebaseapp.com",
+      databaseURL: "https://fadiha-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "fadiha",
+      storageBucket: "fadiha.firebasestorage.app",
+      messagingSenderId: "140264076489",
+      appId: "1:140264076489:web:3eef593895d45ede194918"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function listenToPostsInCloud() {
+      db.ref("posts").on("value", (snapshot) => {
+        const val = snapshot.val();
+        if (!val) {
+          posts = [];
+        } else {
+          posts = Object.values(val).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        }
+        renderGallery();
+      }, (error) => {
+        console.error("Error listening to posts:", error);
+        showToast("Error loading feed: " + (error.message || error), "error");
+      });
+    }
+
+    async function uploadPhotoFile(file) {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success || !result.data || !result.data.url) {
+        throw new Error((result.error && result.error.message) || "Failed to upload image to ImgBB");
+      }
+
+      return result.data.url;
+    }
+
+    async function createPostInCloud(postObj) {
+      await db.ref("posts/" + postObj.id).set(postObj);
+    }
+
+    async function updateCommentsInCloud(postId, commentsArray) {
+      await db.ref("posts/" + postId + "/comments").set(commentsArray);
+    }
+
+    // INITIALIZATION
+    window.onload = function() {
+      // 1. Load Username
+      const savedUser = localStorage.getItem('fadiha_username');
+      if (savedUser && savedUser.trim() !== "") {
+        currentUsername = savedUser.trim();
+        updateUsernameUI();
+      } else {
+        openUsernameModal(false);
+      }
+
+      // 2. Sync Posts in Real Time from Firebase Realtime Database
+      listenToPostsInCloud();
+
+      // 3. Setup Drag and Drop event listeners
+      setupDragAndDrop();
+    };
+
+    // USERNAME MODAL MANAGEMENT
+    function openUsernameModal(allowClose = true) {
+      const modal = document.getElementById('usernameModal');
+      const modalBox = document.getElementById('usernameModalBox');
+      const closeBtn = document.getElementById('closeModalBtn');
+      const input = document.getElementById('modalUsernameInput');
+
+      input.value = currentUsername;
+
+      if (allowClose && currentUsername !== "") {
+        closeBtn.classList.remove('hidden');
+      } else {
+        closeBtn.classList.add('hidden');
+      }
+
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      modalBox.classList.remove('scale-95');
+      modalBox.classList.add('scale-100');
+
+      setTimeout(() => input.focus(), 100);
+    }
+
+    function closeUsernameModal() {
+      if (!currentUsername || currentUsername.trim() === "") return;
+
+      const modal = document.getElementById('usernameModal');
+      const modalBox = document.getElementById('usernameModalBox');
+
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      modalBox.classList.remove('scale-100');
+      modalBox.classList.add('scale-95');
+    }
+
+    function saveUsername(e) {
+      e.preventDefault();
+      const input = document.getElementById('modalUsernameInput');
+      const val = input.value.trim();
+
+      if (val) {
+        currentUsername = val;
+        localStorage.setItem('fadiha_username', currentUsername);
+        updateUsernameUI();
+        closeUsernameModal();
+        showToast(`Welcome, ${currentUsername}!`);
+      }
+    }
+
+    function updateUsernameUI() {
+      document.getElementById('headerUsername').textContent = currentUsername;
+      document.getElementById('headerUsernameMobile').textContent = currentUsername;
+      document.getElementById('postingAsText').textContent = currentUsername;
+    }
+
+    // DRAG & DROP & FILE HANDLING
+    function setupDragAndDrop() {
+      const dropZone = document.getElementById('dropZone');
+
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+      });
+
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.classList.add('border-gold-400', 'bg-slate-900/90');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.classList.remove('border-gold-400', 'bg-slate-900/90');
+        }, false);
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files[0]) {
+          processFile(files[0]);
+        }
+      }, false);
+    }
+
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (files && files[0]) {
+        processFile(files[0]);
+      }
+    }
+
+    function processFile(file) {
+      if (!file.type.startsWith('image/')) {
+        showToast('Please select a valid image file', 'error');
+        return;
+      }
+
+      // Limit to ~10MB
+      if (file.size > 10 * 1024 * 1024) {
+        showToast('Image size exceeds 10MB limit', 'error');
+        return;
+      }
+
+      selectedImageFile = file;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        selectedImageBase64 = e.target.result;
+        document.getElementById('imagePreview').src = selectedImageBase64;
+        document.getElementById('dropZonePrompt').classList.add('hidden');
+        document.getElementById('previewContainer').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearSelectedImage() {
+      selectedImageBase64 = null;
+      selectedImageFile = null;
+      document.getElementById('imageInput').value = '';
+      document.getElementById('imagePreview').src = '';
+      document.getElementById('previewContainer').classList.add('hidden');
+      document.getElementById('dropZonePrompt').classList.remove('hidden');
+    }
+
+    // POST CREATION & STORAGE
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      if (!currentUsername) {
+        openUsernameModal(false);
+        return;
+      }
+
+      if (!selectedImageFile) {
+        showToast('Please select or drag an image first!', 'error');
+        return;
+      }
+
+      const uploadBtn = document.getElementById('uploadBtn');
+      uploadBtn.disabled = true;
+
+      try {
+        const publicUrl = await uploadPhotoFile(selectedImageFile);
+
+        const captionInput = document.getElementById('imageCaption');
+        const caption = captionInput.value.trim() || 'Untitled Photo';
+
+        const newPost = {
+          id: 'post-' + Date.now(),
+          uploader: currentUsername,
+          caption: caption,
+          imageUrl: publicUrl,
+          timestamp: Date.now(),
+          comments: []
+        };
+
+        await createPostInCloud(newPost);
+
+        // Reset form
+        clearSelectedImage();
+        captionInput.value = '';
+
+        showToast('Photo uploaded successfully!');
+      } catch (err) {
+        console.error(err);
+        showToast('Error: ' + (err.message || err), 'error');
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    });
+
+<p class="text-xs text-gray-400 mt-1">Select a name to display on your uploads and comments on fadiha.run.place</p>
       </div>
 
       <form id="usernameForm" onsubmit="saveUsername(event)" class="space-y-4">
