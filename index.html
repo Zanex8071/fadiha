@@ -255,7 +255,6 @@
       </div>
 
       <form id="usernameForm" onsubmit="saveUsername(event)" class="space-y-4">
-            <form id="usernameForm" onsubmit="saveUsername(event)" class="space-y-4">
         <div>
           <label for="modalUsernameInput" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Username</label>
           <div class="relative">
@@ -438,6 +437,17 @@
       modalBox.classList.add('scale-100');
 
       setTimeout(() => input.focus(), 100);
+    }
+
+    function closeUsernameModal() {
+      if (!currentUsername || currentUsername.trim() === "") return;
+
+      const modal = document.getElementById('usernameModal');
+      const modalBox = document.getElementById('usernameModalBox');
+
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      modalBox.classList.remove('scale-100');
+      modalBox.classList.add('scale-95');
     }
 
     function saveUsername(e) {
